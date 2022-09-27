@@ -1,0 +1,78 @@
+Procedure: São procedimentos (sem retorno) criados a partir de tarefas que se necessitam de maior processamento do programa e atualização no banco de dados, principalmente em desenvolvimento WEB pois necessitam de um maior tráfego de rede. Esse tipo de função auxilia na otimização do programa, pois por poder receber parâmetros, ela pode ser utilizada em diversas tarefas diferentes.
+
+
+Criação de tabela:
+CREATE TABLE COLABORADORES
+(
+CODIGO varchar(5),
+NOME varchar(80),
+DEPARTAMENTO int,
+SALARIO money
+)
+GO
+
+
+Criação da procedure:
+
+CREATE PROCEDURE Salario_deposito (DEPTO int, SOMA money OUTPUT) AS
+BEGIN
+SELECT SOMA=sum(SALARIO) FROM COLABORADORES
+WHERE DEPARTAMENTO = DEPTO
+END
+
+A execução da stored procedure será a seguinte:
+
+— Variável de saída
+DECLARE SALARIO_TOTAL Money
+
+— Variável para passagem de parâmetro de entrada
+DECLARE DEPARTAMENTO int
+SET DEPARTAMENTO = 5
+EXEC Salario_Depto @DEPARTAMENTO, @SALARIO_TOTAL OUTPUT
+PRINT @SALARIO_TOTAL
+
+
+
+
+
+
+
+
+acesso ao arquivo : https://docs.google.com/document/d/1xxqPKKfllF0kydM9gEoHEA3t5ThwTghyoCnYMW7nb7s/edit?usp=sharing
+Funções: No Mysql uma FUNCTION é uma função armazenada onde é possível passar parâmetros para ela e então retornar um valor. São rotinas definidas no banco de dados, identificadas por um nome pelo qual podem ser invocadas.
+
+- - Função que recebe um valor e retorna se é positivo ou negativo. - -
+
+DELIMITER //
+CREATE FUNCTION POSITIVO(VALOR FLOAT)
+RETURNS boolean DETERMINISTIC
+BEGIN
+ 
+DECLARE positivo boolean DEFAULT False;
+IF valor >= 0 THEN 
+BEGIN
+SET positivo = true;
+END;
+END IF;
+RETURN positivo;
+END;
+//
+DELIMITER ;
+DELIMITER // é usado para indicar ao banco de dados (MYSQL) onde seu script tem início, e onde encerra. O uso do Delimiter deve ser acompanhado de algum símbolo que seja reconhecido pelo mysql. O mais comum é utilizar dois cifrões ($) ou barras (//)
+
+A cláusula RETURNS pode ser especificada apenas por uma FUNCTION. É usada para indicar o tipo de retorno da função, e o corpo da função deve conter uma instrução RETURN value.
+
+A instrução CREATE FUNCTION é usada para definir o início de uma nova função;
+
+Uma função é considerada "DETERMINISTIC" se ela sempre retorna o mesmo resultado para os mesmos parâmetros de entrada, e "não deterministica" caso contrário.
+
+“BEGIN” e “END” definem o início e o fim de um bloco de instrução em uma função.
+
+“DECLARE” é usado para declarar variáveis que serão utilizadas durante a execução da função
+
+
+
+
+TRIGGERS, são procedimentos(procedure) automáticos que ocorrem após um evento programado,podendo ocorrer antes ou depois de um INSERT, UPDATE e DELETE, dessa forma, podemos desenvolver aumentar o nível de segurança, impedindo ou limitando alterações muito grandes dentro do bancos. 
+	Dessa forma, teríamos o desenvolvimento de trabalhos com maior velocidade, por exemplo, permitir que uma empresa que utiliza dois bancos separados para permitir que um tenha visualização e outro somente para visualização, pois, quando é realizado uma inserção em um o outro repete a informação, dessa forma, possibilita o melhor desempenho do banco.
+	Uma trigger que ativam com ações relacionadas diretamente relacionadas a estruturas são chamadas de DDL, como modificar ou alterar uma tabela são chamadas de Triggers DDL (Data Definition Language), já um trigger diretamente relacionado com com alterações de dados os chamamos de de Triggers DML (Data Modification Language) e se depois realizamos  
