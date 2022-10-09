@@ -23,3 +23,32 @@ END;
 
 //
 DELIMITER ;
+
+USE banco;
+
+DELIMITER //
+CREATE TRIGGER venda_cliente_ativo
+BEFORE INSERT
+ON venda
+FOR EACH ROW
+BEGIN 
+    DECLARE msg VARCHAR(100);
+   	DECLARE id_cliente_comprando INT;
+    DECLARE cliente_ativo_desativo VARCHAR(100);
+    
+    SET id_cliente_comprando = NEW.cliente_id;
+    
+    SELECT cliente.ativo INTO cliente_ativo_desativo FROM cliente WHERE cliente.id = id_cliente_comprando;
+    
+    IF (cliente_ativo_desativo = 'N') THEN
+    	BEGIN 
+           SET msg = "DEU RUIM";
+           SIGNAL SQLSTATE '45000' set MESSAGE_TEXT = msg;
+        
+        END;
+   END IF;
+    
+   END;
+    
+   //
+DELIMITER ;
