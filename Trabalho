@@ -52,3 +52,23 @@ BEGIN
     
    //
 DELIMITER ;
+
+CREATE PROCEDURE estrutura_decisao(venda_id INT) BEGIN DECLARE mensagem VARCHAR(100); DECLARE vini DATETIME; SELECT v.data_cadastro INTO vini FROM venda WHERE venda_id = venda.id; IF (vini > "15/10/2022") THEN SET mensagem = "Data excedida"; END IF; END;;
+
+
+CREATE PROCEDURE gerar_acerto(venda_id INT) 
+BEGIN 
+	DECLARE mensagem VARCHAR(100); 
+	DECLARE vini DATETIME; 
+	SELECT v.data_cadastro INTO vini FROM venda WHERE venda_id = venda.id; 
+	IF (vini > "15/10/2022") THEN 
+    SET mensagem = "Data excedida"; 
+    SIGNAL SQLSTATE "45000" SET MESSAGE_TEXT = mensagem;
+    ELSE 
+    SIGNAL SQLSTATE "45000" SET MESSAGE_TEXT = "Data correta";
+END IF; 
+END;
+// 
+DELIMITER ;
+
+
