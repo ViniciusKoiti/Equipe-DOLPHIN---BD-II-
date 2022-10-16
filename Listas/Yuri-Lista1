@@ -1,0 +1,212 @@
+01- Escreva quatro triggers de sintaxe - a trigger não precisa ter funcionalidade, basta não dar erro de sintaxe. Use variável global para testar.
+- Faça uma declarando variáveis e com select into; 
+use aula;
+DELIMITER //
+
+CREATE TRIGGER variavel
+AFTER INSERT 
+ON cliente
+FOR EACH ROW
+BEGIN 
+	DECLARE nometeste VARCHAR(100);
+    SELECT nome INTO nometeste FROM cliente; 
+    
+END;
+// DELIMITER 
+;
+
+- Faça a segunda com uma estrutura de decisão; 
+use banco;
+
+DELIMITER //
+
+CREATE TRIGGER decisao
+AFTER INSERT 
+ON cliente
+FOR EACH ROW
+BEGIN 
+	DECLARE ativo VARCHAR(100);
+    DECLARE msg VARCHAR(100);
+    SELECT ativo INTO ativo FROM cliente; 
+    IF ativo = "N" THEN 
+			BEGIN 
+			SET msg = "OPS";
+           	SIGNAL SQLSTATE '45000' set MESSAGE_TEXT = msg;
+			END;
+		END IF;
+    
+END;
+// DELIMITER 
+;
+
+- Faça a terceira que gere erro, impedindo a ação;
+use banco;
+
+DELIMITER //
+
+CREATE TRIGGER decisao
+AFTER INSERT 
+ON cliente
+FOR EACH ROW
+BEGIN 
+	DECLARE ativo VARCHAR(100);
+    DECLARE msg VARCHAR(100);
+    SELECT ativo INTO ativo FROM cliente; 
+    IF ativo = "N" THEN 
+			BEGIN 
+			SET msg = "OPS";
+           	SIGNAL SQLSTATE '45000' set MESSAGE_TEXT = msg;
+			END;
+		END IF;
+    
+END;
+// DELIMITER 
+;
+
+- Faça a quarta que utilize a variável new e old - tente diferenciar.
+use aula;
+delimiter //
+CREATE TRIGGER NEW
+BEFORE INSERT
+ON cliente
+FOR EACH ROW
+IF NEW.CPF_CNPJ < 18 THEN
+	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CLENTE PRECISA TER MAIS QUE 18 ANOS.';
+END IF; 
+
+//
+delimiter ;
+
+02- Uma trigger que tem a função adicionar a entrada de produtos no estoque deve ser associado para qual:
+•	Tabela?
+PRODUTO, COMRAS
+•	Tempo?
+BEFORE
+•	Evento?
+UPDATE
+•	Precisa de variáveis? Quais?
+SIM, UMA VARIAVEL PARA ARMAZENAR A QUANTIDADE DE PRODUTOS
+•	Implemente a trigger. 
+
+DELIMITER //
+	
+	CREATE TRIGGER adicionar_produto
+	AFTER INSERT ON icompra 
+	FOR EACH ROW 
+	BEGIN
+		
+		UPDATE produto 
+		INNER JOIN icompra ON produto.id = icompra.produto_id
+		SET produto.estoque = produto.estoque + new.quantidade;
+		
+		
+	END;
+	
+// 
+DELIMITER ;
+
+03- Uma trigger que tem a função criar um registro de auditoria quando um pagamento e recebimento for alterada deve ser associado para qual(is):
+•	Tabela(s)?
+AUDITORIA, PAGAMENTO, RECEBIMENTO
+•	Tempo?
+BEFORE
+•	Evento?
+INSERT
+•	Implemente a trigger (pode criar a tabela de auditoria)
+
+
+DELIMITER //
+
+CREATE TRIGGER auditoria
+AFTER UPDATE ON recebimento 
+FOR EACH ROW 
+	BEGIN 
+		DECLARE penultimo_dado_recebimento_descricao VARCHAR(200);
+		DECLARE penultimo_dado_recebimento_valor DECIMAL(12,2);
+		DECLARE penultimo_dado_recebimento_data_recebimento DATETIME;
+		DECLARE penultimo_dado_recebimento_parcela_a_receber_id INT;
+		DECLARE penultimo_dado_recebimento_fornecedor_id INT;
+		
+		SET penultimo_dado_recebimento_descricao = old.descricao;
+		SET penultimo_dado_recebimento_valor = old.valor;
+		SET penultimo_dado_recebimento_data_recebimento = old.data_recebimento;
+		SET penultimo_dado_recebimento_parcela_a_receber_id = old.parcela_receber_id;
+		SET penultimo_dado_recebimento_fornecedor_id = old.fornecedor_id;
+	END;
+// 
+DELIMITER ;
+
+04- Uma trigger que tem a função impedir a venda de um produto inferior a 50% do preço de venda deve ser associado para qual:
+•	Tabela?
+PRODUTO
+•	Tempo?
+AFTER
+•	Evento?
+•	Implemente a trigger
+
+
+DELIMITER //
+CREATE TRIGGER venda
+AFTER INSERT 
+ON ivenda
+FOR EACH ROW 
+	BEGIN 
+  
+		preco_unidade_produto_venda
+		DECLARE id_produto INT;
+		DECLARE preco_produto DECIMAL(12,2);
+		DECLARE preco_de_venda DECIMAL(12,2);
+		
+		SET preco_produto = new.preco_unidade;
+		SELECT preco_venda 
+		INNER JOIN produto ON produto.id = new.produto_id
+		INTO preco_de_venda FROM produto;
+		
+		IF (preco_produto > (preco_de_venda/2)) THEN 
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Valor de venda menor que 50%";
+		END IF;
+		
+	END;
+// 
+DELIMITER ;
+
+05- Este é para testar a sintaxe - tente implementar sem o script
+Uma trigger que tem a função de gerar o RA automático na tabela ALUNO deve ser associada para qual
+•	Tabela?
+ALUNO
+•	Tempo?
+BEFORE
+•	Evento?
+INSERT
+•	Precisa de variáveis? Quais?
+ANO_CORRENTE, COD_CURSO, ID_ALUNO
+•	Implemente a trigger - RA igual a concatenção do ano corrente, código do curso e o id do cadastro do aluno. 
+
+CREATE TRIGGER gerador_RA
+AFTER INSERT 
+ON aluno
+FOR EACH ROW 
+	BEGIN 
+		DECLARE ano_corrente VARCHAR(100);
+		DECLARE cod_curso VARCHAR(100);
+		DECLARE id_aluno VARCHAR(100);
+		DECLARE RA VARCHAR(100);
+		
+		SELECT CONVERT(VARCHAR(100),aluno.data_matricula) INTO data_de_matricula FROM aluno
+		WHERE new.id = aluno.id;
+		
+		SELECT CONVERT(VARCHAR(100),aluno.curso_id) INTO codigo_curso FROM aluno
+		WHERE new.id = aluno.id;
+		
+		SELECT CONVERT(VARCHAR(100),aluno.id) INTO id_aluno FROM aluno WHERE
+		new.id = aluno.id;
+		
+		
+		SET RA = CONCAT('ano_corrente' + 'cod_curso' + 'id_aluno);
+		
+		UPDATE aluno FROM aluno.RA = RA WHERE aluno.id = new.id;
+		
+	END;
+
+//
+DELIMITER ;
