@@ -194,19 +194,13 @@ FOR EACH ROW
 		
 		SELECT CONVERT(VARCHAR(100),aluno.data_matricula) INTO data_de_matricula FROM aluno
 		WHERE new.id = aluno.id;
-		
 		SELECT CONVERT(VARCHAR(100),aluno.curso_id) INTO codigo_curso FROM aluno
 		WHERE new.id = aluno.id;
-		
 		SELECT CONVERT(VARCHAR(100),aluno.id) INTO id_aluno FROM aluno WHERE
 		new.id = aluno.id;
-		
-		
+	
 		SET RA = CONCAT('ano_corrente' + 'cod_curso' + 'id_aluno);
-		
 		UPDATE aluno FROM aluno.RA = RA WHERE aluno.id = new.id;
-		
 	END;
-
 //
 DELIMITER ;
