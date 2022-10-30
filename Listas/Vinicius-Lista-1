@@ -154,27 +154,24 @@ DELIMITER ;
 
 -- 3
 
-DELIMITER // 
+CREATE TABLE auditoria(
+    id INT NOT NULL AUTO_INCREMENT
+    ,data_auditoria DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ,descricao VARCHAR(100) NOT NULL
+    ,CONSTRAINT pk_auditoria PRIMARY KEY (id)
+);
 
-CREATE TRIGGER auditoria_pagamento
-AFTER UPDATE ON pagamento
-FOR EACH ROW
-	BEGIN 
-		
-		DECLARE penultimo_dado_pagamento_descricao VARCHAR(200);
-		DECLARE penultimo_dado_pagamento_valor DECIMAL(12,2);
-		DECLARE penultimo_dado_pagamento_data_pagamento DATETIME;
-		DECLARE penultimo_dado_pagamento_parcela_a_pagar_id INT;
-		DECLARE penultimo_dado_pagamento_fornecedor_id INT;
-		
-		SET penultimo_dado_pagamento_descricao = old.descricao;
-		SET penultimo_dado_pagamento_valor = old.valor;
-		SET penultimo_dado_pagamento_data_pagamento = old.data_pagamento;
-		SET penultimo_dado_pagamento_parcela_a_pagar_id = old.parcela_receber_id;
-		SET penultimo_dado_pagamento_fornecedor_id = old.fornecedor_id;
-    
+
+DELIMITER //
+CREATE TRIGGER auditoria_produto_update AFTER UPDATE ON produto FOR EACH ROW
+    BEGIN
+        DECLARE descricaoCompleta VARCHAR(100);
+        SET descricaoCompleta = CONCAT("Produto ", OLD.nome, " teve o valor alterado de ", OLD.preco_venda, " para ", NEW.preco_venda);
+        INSERT INTO auditoria (descricao) VALUES (descricaoCompleta);
     END;
-// DELIMITER ;
+//
+DELIMITER ;
+
 
 DELIMITER //
 
