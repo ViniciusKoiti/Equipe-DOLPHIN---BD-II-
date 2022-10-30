@@ -178,24 +178,24 @@ FOR EACH ROW
 
 DELIMITER //
 
-CREATE TRIGGER auditoria_recebimento 
-AFTER UPDATE ON recebimento 
-FOR EACH ROW 
-	BEGIN 
-		DECLARE penultimo_dado_recebimento_descricao VARCHAR(200);
-		DECLARE penultimo_dado_recebimento_valor DECIMAL(12,2);
-		DECLARE penultimo_dado_recebimento_data_recebimento DATETIME;
-		DECLARE penultimo_dado_recebimento_parcela_a_receber_id INT;
-		DECLARE penultimo_dado_recebimento_fornecedor_id INT;
-		
-		SET penultimo_dado_recebimento_descricao = old.descricao;
-		SET penultimo_dado_recebimento_valor = old.valor;
-		SET penultimo_dado_recebimento_data_recebimento = old.data_recebimento;
-		SET penultimo_dado_recebimento_parcela_a_receber_id = old.parcela_receber_id;
-		SET penultimo_dado_recebimento_fornecedor_id = old.fornecedor_id;
-	END;
-// 
+CREATE TABLE auditoria(
+    id INT NOT NULL AUTO_INCREMENT
+    ,data_auditoria DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ,descricao VARCHAR(100) NOT NULL
+    ,CONSTRAINT pk_auditoria PRIMARY KEY (id)
+);
+
+
+DELIMITER //
+CREATE TRIGGER auditoria_produto_update AFTER UPDATE ON produto FOR EACH ROW
+    BEGIN
+        DECLARE descricaoCompleta VARCHAR(100);
+        SET descricaoCompleta = CONCAT("Produto ", OLD.nome, " teve o valor alterado de ", OLD.preco_venda, " para ", NEW.preco_venda);
+        INSERT INTO auditoria (descricao) VALUES (descricaoCompleta);
+    END;
+//
 DELIMITER ;
+
 
 -- 04 
 DELIMITER //
@@ -254,3 +254,368 @@ FOR EACH ROW
 
 //
 DELIMITER ;
+
+
+-- 6.A
+
+DELIMITER //
+
+CREATE TRIGGER gerando_ra
+AFTER INSERT 
+ON aluno
+FOR EACH ROW 
+	BEGIN 
+		DECLARE data_de_matricula VARCHAR(100);
+		DECLARE codigo_curso VARCHAR(100);
+		DECLARE id_aluno VARCHAR(100);
+		DECLARE ra VARCHAR(100);
+		
+		SELECT CONVERT(VARCHAR(100),aluno.data_matricula) INTO data_de_matricula FROM aluno
+		WHERE new.id = aluno.id;
+		
+		SELECT CONVERT(VARCHAR(100),aluno.curso_id) INTO codigo_curso FROM aluno
+		WHERE new.id = aluno.id;
+		
+		SELECT CONVERT(VARCHAR(100),aluno.id) INTO id_aluno FROM aluno WHERE
+		new.id = aluno.id;
+		
+		
+		SET ra = CONCAT(data_de_matricula + codigo_curso + id_aluno);
+		
+		UPDATE aluno FROM aluno.ra = ra WHERE aluno.id = new.id;
+		
+	END;
+
+//
+DELIMITER ;
+
+-- 6.B
+ALTER TABLE bibliotecario
+ADD codigo_profissao VARCHAR(11);
+
+DELIMITER //
+
+CREATE TRIGGER gerando_siape
+AFTER INSERT 
+ON bibliotecario
+FOR EACH ROW 
+	BEGIN 
+		DECLARE data_de_entrada VARCHAR(100);
+		DECLARE codigo_profissao VARCHAR(100);
+		DECLARE id_bibliotecario VARCHAR(100);
+		DECLARE siape VARCHAR(100);
+		
+		SELECT CONVERT(YEAR(VARCHAR(100),bibliotecario.data_matricula)) INTO data_de_entrada FROM bibliotecario
+		WHERE new.id = bibliotecario.id;
+		
+		SELECT CONVERT(VARCHAR(100),bibliotecario.curso_id) INTO codigo_profissao FROM bibliotecario
+		WHERE new.id = bibliotecario.id;
+		
+		SELECT CONVERT(VARCHAR(100),bibliotecario.id) INTO id_bibliotecario FROM bibliotecario WHERE
+		new.id = bibliotecario.id;
+		
+		
+		SET siape = CONCAT(data_de_entrada + codigo_profissao + id_bibliotecario);
+		
+		UPDATE siape FROM bibliotecario.siape = siape WHERE bibliotecario.id = new.id;
+		
+	END;
+
+//
+DELIMITER ;
+
+-- 6.C 
+
+CREATE TABLE auditando(
+	ID INT NOT NULL auto_increment,
+	insercoes VARCHAR(100) NOT NULL
+);
+
+DELIMITER //
+CREATE TRIGGER entrada_reserva_armario
+AFTER INSERT 
+ON reserva
+FOR EACH ROW
+	BEGIN 
+	
+		DECLARE msg VARCHAR(100);
+		DECLARE numero_armario INT;
+		DECLARE aluno_nome VARCHAR(100)
+		DECLARE data_hora_emprestimo DATETIME;
+		
+		SELECT armario.numero INTO numero_armario FROM armario WHERE 
+		id = new.armario_id;
+		
+		SELECT aluno.nome,aluno.dataHoraEmprestimo INTO aluno_nome,data_hora_emprestimo FROM aluno WHERE id = new.aluno_id;
+		
+		
+		
+		SELECT 
+		SET msg = "O aluno: " + aluno_nome + "pegou a chave do armario"
+			      + numero_armario + "em " + CONVERT(data_hora_emprestimo,DATETIME);
+		
+	
+	END;
+	
+	//
+DELIMITER ; 
+
+
+DELIMITER //
+CREATE TRIGGER saida_reserva_armario
+AFTER UPDATE
+ON reserva
+FOR EACH ROW
+	BEGIN 
+	
+		DECLARE msg VARCHAR(100);
+		DECLARE numero_armario INT;
+		DECLARE aluno_nome VARCHAR(100)
+		DECLARE data_hora_devolucao DATETIME;
+		
+		SELECT armario.numero INTO numero_armario FROM armario WHERE 
+		id = new.armario_id;
+		
+		SELECT aluno.nome,aluno.dataHoraDevolucao INTO aluno_nome,data_hora_devolucao FROM aluno WHERE id = new.aluno_id;
+		
+		
+		
+		SELECT 
+		SET msg = "O aluno: " + aluno_nome + "devolveu a chave do armario:"
+			      + numero_armario + "em " + CONVERT(data_hora_devolucao,DATETIME);
+				  
+		INSERT INTO auditoria(insercoes) VALUES (msg);
+		
+	
+	END;
+	
+	//
+DELIMITER ; 
+
+
+
+/*
+LISTA B 
+*/
+
+-- Lista Procedure
+1.1
+DELIMITER // 
+
+CREATE PROCEDURE exemplo(tabela_id INT)
+BEGIN 
+	DECLARE variavel VARCHAR(100);
+	
+	SELECT campo INTO variavel FROM tabela WHERE tabela.id = tabela_id;
+	
+END;
+
+// 
+DELIMITER ;
+
+1.2
+
+
+DELIMITER // 
+
+CREATE PROCEDURE exemplo(tabela_id INT)
+BEGIN 
+	DECLARE variavel VARCHAR(100);
+	DECLARE outra_variavel VARCHAR(100);
+	SELECT campo INTO variavel FROM tabela WHERE tabela.id = tabela_id;
+	
+	IF (variavel == "PROBLEMA") THEN 
+		BEGIN 
+			SET outra_variavel = "problema ae amigão";
+		END;
+	END IF;
+	
+END;
+
+// 
+DELIMITER ;
+
+DELIMITER // 
+1.3
+CREATE PROCEDURE exemplo(tabela_id INT)
+BEGIN 
+	DECLARE variavel VARCHAR(100);
+	DECLARE outra_variavel VARCHAR(100);
+	SELECT campo INTO variavel FROM tabela WHERE tabela.id = tabela_id;
+	
+	IF (variavel == "PROBLEMA") THEN 
+		BEGIN 
+USE emprestimo;
+ 
+DELIMITER //
+CREATE PROCEDURE exemplo_01_A(parametro INT)
+BEGIN 
+
+	DECLARE variavel VARCHAR(100);
+    
+    SELECT campo INTO VARIAVEL WHERE parametro = campo_inteiro;
+
+END;
+//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE exemplo_01_B(parametro INT)
+BEGIN 
+
+	DECLARE variavel VARCHAR(100);
+    
+    SELECT campo INTO variavel WHERE parametro = campo_inteiro;
+    
+    IF variavel != "Condicional" THEN 
+		SET variavel = "Variavel alterada!";
+    END IF;
+
+END;
+//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE exemplo_01_c_d(parametro INT)
+BEGIN 
+
+	DECLARE variavel VARCHAR(100);
+    
+    SELECT campo INTO variavel WHERE parametro = campo_inteiro;
+    
+    IF variavel != "Condicional" THEN 
+		SET variavel = "Variavel alterada!";
+	ELSE 
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CAMPO COM PROBLEMA';
+    END IF;
+	
+END;
+//
+DELIMITER ;
+
+
+
+DELIMITER //
+CREATE PROCEDURE altera_estoque_e_insere(id_produto INT, id_venda INT,quantidade INT, preco_unidade DECIMAL(8,2),id_cliente INT)
+BEGIN
+
+	DECLARE ativo_cliente VARCHAR(100);
+	
+    
+    SELECT ativo INTO ativo_cliente FROM cliente WHERE cliente.id = id_cliente;
+
+	IF ativo_cliente = 'A' THEN 
+		INSERT INTO item_venda(produto_id,venda_id, quantidade, preco_unidade) VALUES (id_produto,id_venda,quantidade,preco_unidade);
+        UPDATE produto SET estoque = estoque - quantidade WHERE produto.id = id_produto; 
+        
+	ELSE
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "cliente inativo";
+	END IF;
+END;
+
+//
+DELIMITER ;
+
+-- 3 
+
+DELIMITER //
+CREATE PROCEDURE alterar_preco_venda(id_produto INT, preco_venda DECIMAL(8,2))
+BEGIN
+    DECLARE preco_custo DECIMAL(8,2);
+    SELECT produto.preco_custo INTO preco_custo FROM produto WHERE produto.id = id_produto;
+    IF preco_venda > preco_custo THEN
+    BEGIN
+        UPDATE produto SET preco_venda = preco_venda WHERE produto.id = id_produto;
+    END;
+    END IF;
+END; //
+DELIMITER ;
+
+/* Poderiamos realizar os alteração com uma TRIGGER que faria uma alteração após a realização da venda.
+    dessa forma, caso o sistema chamasse as uma QUERY DE INSERT ao inves de chamar a procedure com CALL 
+    teriamos o mesmo resultado.
+*/
+-- 4 
+DELIMITER //
+CREATE PROCEDURE insercao_item_venda(id_venda INT, id_produto INT, quantidade INT, preco_venda DECIMAL(8,2))
+BEGIN 
+	DECLARE ativo CHAR;
+    DECLARE estoque INT;
+    
+    SELECT produto.estoque INTO estoque FROM produto WHERE produto.id = id_produto;
+    
+    INSERT INTO item_venda(quantidade, preco_venda, venda_id, produto_id) VALUES (quantidade, preco_venda,id_venda,id_produto);
+    UPDATE produto SET estoque = (estoque - quantidade) WHERE produto.id = id_produto;
+    UPDATE venda SET total = total + (preco_venda * quantidade) WHERE venda.id = id_venda;
+
+
+END;
+// 
+DELIMITER ;
+
+/*
+É possivel no entanto, a procedure ocorreria quando fosse chamada, mas a TRIGGER 
+seria movida ao evento de INSERÇÃO,por esse motivo, teriamos que retirar a função de inserção
+*/
+
+-- 5
+
+/*
+
+Teriamos que ter uma TABELA com FUNCIONARIOS, SALARIOS e FUNCIONARIOS_SALARIOS, onde FUNCIONARIO teria as informações sobre
+as questões do funcionario, e nos salarios, teriamos informações sobre os salarios(valor_hora,hora_extra,vales), teriamos que
+ter uma tabela funcionarios_salarios,pois dentro de um gerenciamento de uma empresa é possível e provavel que teriamos mais de um
+tipo de vale.
+
+*/
+
+-- 6 
+-- Procedimento que faria auditoria das entradas de alguém de caixas diferentes
+-- Considero que os ra e siape será gerado por uma trigger
+ALTER TABLE aluno
+ADD codigo_curso VARCHAR(11)
+
+DELIMITER //
+CREATE PROCEDURE cadastra_pessoa_aluno(
+				data_Atualizaçao DATETIME,
+                data_Criacao DATETIME,
+				email VARCHAR(100),
+                nome VARCHAR(100),
+                senha VARCHAR(100),
+                telefone VARCHAR(11),
+                codigo_curso VARCHAR(11)
+               )
+BEGIN 
+
+INSERT INTO tb_estudante(dataAtualizacao,dataCriacao,email,nome,senha,telefone,codigo_curso) VALUES
+(data_Atualizacao,data_Criacao,email,nome,senha,telefone,codigo_curso);
+
+END;
+//
+DELIMITER ;
+
+ALTER TABLE bibliotecario
+ADD codigo_profissao VARCHAR(11);
+
+DELIMITER //
+CREATE PROCEDURE cadastra_pessoa_bibliotecario(
+				data_Atualizaçao DATETIME,
+                data_Cricao DATETIME,
+				email VARCHAR(100),
+                nome VARCHAR(100),
+                senha VARCHAR(100),
+                telefone VARCHAR(11),
+                codigo_profissao VARCHAR(11)
+                )
+BEGIN 
+	
+    INSERT INTO tb_estudante(dataAtualizacao,dataCriacao,email,nome,senha,telefone,codigo_curso) VALUES
+(data_Atualizacao,data_Criacao,email,nome,senha,telefone,codigo_profissao);
+    
+END;
+//
+DELIMITER ;
+
+7 - A principal diferença é como elas são ativadas, as funções são ativadas através de um SELECT e possuem RETORNO, já as procedures são chamadas através de
+CALL e não possuem retorno, já as TRIGGERS são atividas através de uma ação, e permitem utilização de dos novos valores ou antigos valores dos campos, através das funções
+new or old, dessa forma, temos resultados novos.
