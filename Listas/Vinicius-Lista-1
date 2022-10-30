@@ -1,0 +1,256 @@
+
+-- 1
+
+DELIMITER //
+
+CREATE TRIGGER teste_1
+AFTER INSERT 
+ON tabela
+FOR EACH ROW
+BEGIN 
+	DECLARE variavel VARCHAR(100);
+    DECLARE outra_variavel INT;
+    SELECT campo INTO variavel FROM tabela; 
+    
+END;
+// DELIMITER 
+
+-- 2
+
+DELIMITER //
+
+CREATE TRIGGER teste_1
+AFTER UPDATE/DELETE/INSERT
+ON tabela
+FOR EACH ROW
+BEGIN 
+	DECLARE variavel VARCHAR(100);
+    DECLARE outra_variavel INT;
+	SELECT campo INTO variavel FROM tabela WHERE campo = "STRING GENERICA" ; 
+	DECLARE cursor_generico CURSOR FOR
+		SELECT campo_inteiro FROM tabela WHERE campo_inteiro = INTEIRO; 
+	DECLARE CONTINUE HANDLER FOR NOT FOUND SET acabou = TRUE;
+	
+	OPEN cursor_generico;
+	read_loop : LOOP 
+		FETCH cursor_generico INTO  outra_variavel;
+		SET outra_variavel = outra_variavel + 1;
+		IF outra_variavel = 10 OR acabou THEN 
+			BEGIN 
+				LEAVE read_loop;
+			END;
+		END IF;
+	END LOOP;
+	CLOSE cursor_generico;
+	   
+END;
+// 
+DELIMITER ;
+
+-- 3
+
+DELIMITER //
+
+CREATE TRIGGER teste_1
+AFTER UPDATE/DELETE/INSERT
+ON tabela
+FOR EACH ROW
+BEGIN 
+	DECLARE variavel VARCHAR(100);
+    DECLARE outra_variavel INT;
+	SELECT campo INTO variavel FROM tabela WHERE campo = "STRING GENERICA" ; 
+	DECLARE cursor_generico CURSOR FOR
+		SELECT campo_inteiro FROM tabela WHERE campo_inteiro = INTEIRO; 
+	DECLARE CONTINUE HANDLER FOR NOT FOUND SET acabou = TRUE;
+	
+	OPEN cursor_generico;
+	read_loop : LOOP 
+		FETCH cursor_generico INTO  outra_variavel;
+		SET outra_variavel = outra_variavel + 1;
+		IF outra_variavel = 10 OR acabou THEN 
+			BEGIN 
+				LEAVE read_loop;
+			END;
+		ELSE 
+			BEGIN 
+				SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "LOOP INFINITO";
+			END;
+		END IF;
+		
+	END LOOP;
+	CLOSE cursor_generico;
+	   
+END;
+// 
+DELIMITER ;
+
+-- 4 
+
+DELIMITER //
+
+CREATE TRIGGER teste_1
+AFTER UPDATE/DELETE/INSERT
+ON tabela
+FOR EACH ROW
+BEGIN 
+	DECLARE variavel VARCHAR(100);
+    
+	DECLARE outra_variavel INT;
+	
+	SELECT campo INTO variavel FROM tabela WHERE campo = "STRING GENERICA" ; 
+	
+	DECLARE cursor_generico CURSOR FOR
+		SELECT campo_inteiro FROM tabela WHERE campo_inteiro = INTEIRO; 
+	DECLARE CONTINUE HANDLER FOR NOT FOUND SET acabou = TRUE;
+	
+	DECLARE campo_generico_inteiro_novo INT;
+	DECLARE campo_generico_inteiro_antigo INT;
+	
+	SET campo_generico_inteiro_antigo = old.campo;
+	SET campo_generico_inteiro_novo = new.campo;
+	
+	OPEN cursor_generico;
+	read_loop : LOOP 
+		FETCH cursor_generico INTO  outra_variavel;
+		SET outra_variavel = outra_variavel + 1;
+		IF outra_variavel = 10 OR acabou THEN 
+			BEGIN 
+				LEAVE read_loop;
+			END;
+		ELSE 
+			BEGIN 
+				SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "LOOP INFINITO";
+			END;
+		END IF;
+	END LOOP;
+	CLOSE cursor_generico;
+	   
+END;
+// 
+DELIMITER ;
+
+-- 2
+
+-- VENDA
+-- INSERT/BEFORE 
+-- SIM, uma para armazenar as dentro do produto  
+
+DELIMITER //
+	
+	CREATE TRIGGER adicionar_produto
+	AFTER INSERT ON icompra 
+	FOR EACH ROW 
+	BEGIN
+		
+		UPDATE produto 
+		INNER JOIN icompra ON produto.id = icompra.produto_id
+		SET produto.estoque = produto.estoque + new.quantidade;
+		
+		
+	END;
+	
+// 
+DELIMITER ;
+
+-- 3
+
+DELIMITER // 
+
+CREATE TRIGGER auditoria_pagamento
+AFTER UPDATE ON pagamento
+FOR EACH ROW
+	BEGIN 
+		
+		DECLARE penultimo_dado_pagamento_descricao VARCHAR(200);
+		DECLARE penultimo_dado_pagamento_valor DECIMAL(12,2);
+		DECLARE penultimo_dado_pagamento_data_pagamento DATETIME;
+		DECLARE penultimo_dado_pagamento_parcela_a_pagar_id INT;
+		DECLARE penultimo_dado_pagamento_fornecedor_id INT;
+		
+		SET penultimo_dado_pagamento_descricao = old.descricao;
+		SET penultimo_dado_pagamento_valor = old.valor;
+		SET penultimo_dado_pagamento_data_pagamento = old.data_pagamento;
+		SET penultimo_dado_pagamento_parcela_a_pagar_id = old.parcela_receber_id;
+		SET penultimo_dado_pagamento_fornecedor_id = old.fornecedor_id;
+    
+    END;
+// DELIMITER ;
+
+DELIMITER //
+
+CREATE TRIGGER auditoria_recebimento 
+AFTER UPDATE ON recebimento 
+FOR EACH ROW 
+	BEGIN 
+		DECLARE penultimo_dado_recebimento_descricao VARCHAR(200);
+		DECLARE penultimo_dado_recebimento_valor DECIMAL(12,2);
+		DECLARE penultimo_dado_recebimento_data_recebimento DATETIME;
+		DECLARE penultimo_dado_recebimento_parcela_a_receber_id INT;
+		DECLARE penultimo_dado_recebimento_fornecedor_id INT;
+		
+		SET penultimo_dado_recebimento_descricao = old.descricao;
+		SET penultimo_dado_recebimento_valor = old.valor;
+		SET penultimo_dado_recebimento_data_recebimento = old.data_recebimento;
+		SET penultimo_dado_recebimento_parcela_a_receber_id = old.parcela_receber_id;
+		SET penultimo_dado_recebimento_fornecedor_id = old.fornecedor_id;
+	END;
+// 
+DELIMITER ;
+
+-- 04 
+DELIMITER //
+CREATE TRIGGER preco_inferior_50 
+AFTER INSERT 
+ON ivenda
+FOR EACH ROW 
+	BEGIN 
+		
+		DECLARE id_produto INT;
+		DECLARE preco_unidade_produto_venda DECIMAL(12,2);
+		DECLARE preco_de_venda DECIMAL(12,2);
+		
+		SET preco_unidade_produto_venda = new.preco_unidade;
+		SELECT preco_venda 
+		INNER JOIN produto ON produto.id = new.produto_id
+		INTO preco_de_venda FROM produto;
+		
+		IF (preco_unidade_produto_venda > (preco_de_venda/2)) THEN 
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Valor Invalido";
+		END IF;
+		
+	END;
+// 
+DELIMITER ;
+
+-- 05
+
+DELIMITER //
+
+CREATE TRIGGER gerando_ra
+AFTER INSERT 
+ON aluno
+FOR EACH ROW 
+	BEGIN 
+		DECLARE data_de_matricula VARCHAR(100);
+		DECLARE codigo_curso VARCHAR(100);
+		DECLARE id_aluno VARCHAR(100);
+		DECLARE ra VARCHAR(100);
+		
+		SELECT CONVERT(VARCHAR(100),aluno.data_matricula) INTO data_de_matricula FROM aluno
+		WHERE new.id = aluno.id;
+		
+		SELECT CONVERT(VARCHAR(100),aluno.curso_id) INTO codigo_curso FROM aluno
+		WHERE new.id = aluno.id;
+		
+		SELECT CONVERT(VARCHAR(100),aluno.id) INTO id_aluno FROM aluno WHERE
+		new.id = aluno.id;
+		
+		
+		SET ra = CONCAT('data_de_matricula' + 'codigo_curso' + 'id_aluno);
+		
+		UPDATE aluno FROM aluno.ra = ra WHERE aluno.id = new.id;
+		
+	END;
+
+//
+DELIMITER ;
